@@ -1,0 +1,152 @@
+import { findSub } from "@shared/niches";
+import { loadLeads, loadStats } from "./api";
+import { useApp } from "./store";
+
+export default function Results() {
+  const leads = useApp((s) => s.leads);
+  const total = useApp((s) => s.total);
+  const bySub = useApp((s) => s.bySub);
+  const byCountry = useApp((s) => s.byCountry);
+  const filterSub = useApp((s) => s.filterSub);
+  const filterCc = useApp((s) => s.filterCc);
+  const query = useApp((s) => s.query);
+  const status = useApp((s) => s.status);
+  const set = useApp((s) => s.set);
+
+  async function refresh(next?: { subId?: string; cc?: string; q?: string }) {
+    const subId = next?.subId ?? filterSub;
+    const cc = next?.cc ?? filterCc;
+    const q = next?.q ?? query;
+    const [list, stats] = await Promise.all([
+      loadLeads({ subId: subId || undefined, cc: cc || undefined, q: q || undefined }),
+      loadStats(),
+    ]);
+    set({
+      leads: list.items,
+      total: list.total,
+      bySub: stats.bySub,
+      byCountry: stats.byCountry,
+    });
+  }
+
+  const csv = `/api/export.csv?${new URLSearchParams({
+    ...(filterSub ? { subId: filterSub } : {}),
+    ...(filterCc ? { cc: filterCc } : {}),
+    ...(query ? { q: query } : {}),
+  })}`;
+
+  return (
+    <section className="panel">
+      <div className="panel-h">
+        <h2>Результаты поиска</h2>
+        <p>
+          {total} уникальных точек · сейчас {status.currentCity || "ожидание"} · {status.currentSub}
+        </p>
+      </div>
+      <div className="search">
+        <input
+          placeholder="Фильтр: имя, город, телефон…"
+          value={query}
+          onChange={(e) => set({ query: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void refresh();
+          }}
+        />
+        <a className="btn ghost" href={csv}>
+          CSV
+        </a>
+      </div>
+      <div className="filters">
+        <button
+          className={`chip ${!filterSub ? "on" : ""}`}
+          onClick={() => {
+            set({ filterSub: "" });
+            void refresh({ subId: "" });
+          }}
+        >
+          Все ниши
+        </button>
+        {bySub.map((b) => {
+          const sub = findSub(b.id);
+          return (
+            <button
+              key={b.id}
+              className={`chip ${filterSub === b.id ? "on" : ""}`}
+              onClick={() => {
+                set({ filterSub: b.id });
+                void refresh({ subId: b.id });
+              }}
+            >
+              {sub?.sub.ru ?? b.id} · {b.count}
+            </button>
+          );
+        })}
+      </div>
+      <div className="filters">
+        <button
+          className={`chip ${!filterCc ? "on" : ""}`}
+          onClick={() => {
+            set({ filterCc: "" });
+            void refresh({ cc: "" });
+          }}
+        >
+          Все страны
+        </button>
+        {byCountry.map((c) => (
+          <button
+            key={c.cc}
+            className={`chip ${filterCc === c.cc ? "on" : ""}`}
+            onClick={() => {
+              set({ filterCc: c.cc });
+              void refresh({ cc: c.cc });
+            }}
+          >
+            {c.country} · {c.count}
+          </button>
+        ))}
+      </div>
+      <div className="list">
+        {leads.length === 0 && (
+          <div className="empty">Пока пусто. Запустите поиск — точки будут появляться здесь каждую минуту.</div>
+        )}
+        {leads.map((l) => {
+          const sub = findSub(l.subId);
+          return (
+            <article key={l.id} className="lead">
+              <div>
+                <h3>{l.name}</h3>
+                <div className="meta">
+                  {sub?.niche.ru} / {sub?.sub.ru} · {l.city}, {l.country}
+                  {l.district ? ` · ${l.district}` : ""}
+                </div>
+                {l.address && <div className="meta">{l.address}</div>}
+                <div className="contacts">
+                  {l.phone && <span className="tag">{l.phone}</span>}
+                  {l.website && (
+                    <a href={l.website.startsWith("http") ? l.website : `https://${l.website}`} target="_blank" rel="noreferrer">
+                      сайт
+                    </a>
+                  )}
+                  {l.instagram && <span className="tag">ig {l.instagram}</span>}
+                  {l.telegram && <span className="tag">tg {l.telegram}</span>}
+                  {l.facebook && <span className="tag">fb</span>}
+                  {l.vk && <span className="tag">vk</span>}
+                  {l.email && <span className="tag">{l.email}</span>}
+                  <span className="tag">{l.source}</span>
+                </div>
+              </div>
+              <a
+                className="btn ghost"
+                href={`https://www.openstreetmap.org/?mlat=${l.lat}&mlon=${l.lon}#map=17/${l.lat}/${l.lon}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                карта
+              </a>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
