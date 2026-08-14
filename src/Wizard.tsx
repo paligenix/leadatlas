@@ -1,5 +1,5 @@
 import { NICHES, NICHE_GROUPS } from "@shared/niches";
-import { startSearch } from "./api";
+import { startSearch } from "./search/engine";
 import { useApp } from "./store";
 
 const GENDERS = [
@@ -22,9 +22,9 @@ export default function Wizard() {
   const visibleNiches = niches.filter((n) => !group || n.group === group);
   const subPool = niches.filter((n) => selectedNiches.includes(n.id));
 
-  async function launch() {
+  function launch() {
     if (!selectedSubs.length) return;
-    const status = await startSearch(selectedSubs, gender);
+    const status = startSearch(selectedSubs, gender);
     set({ status, step: 4 });
   }
 
@@ -165,7 +165,7 @@ export default function Wizard() {
             <button className="btn ghost" onClick={() => set({ step: 2 })}>
               Назад
             </button>
-            <button className="btn" disabled={!selectedSubs.length} onClick={() => void launch()}>
+            <button className="btn" disabled={!selectedSubs.length} onClick={launch}>
               Запустить 24/7 · {selectedSubs.length}
             </button>
           </div>

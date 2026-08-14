@@ -1,5 +1,4 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useApp } from "./store";
@@ -11,34 +10,6 @@ function latLonToVec(lat: number, lon: number, r = 1.62) {
     -r * Math.sin(phi) * Math.cos(theta),
     r * Math.cos(phi),
     r * Math.sin(phi) * Math.sin(theta),
-  );
-}
-
-function Atmosphere() {
-  return (
-    <mesh>
-      <sphereGeometry args={[1.78, 64, 64]} />
-      <shaderMaterial
-        transparent
-        side={THREE.BackSide}
-        uniforms={{ color: { value: new THREE.Color("#3ee0c8") } }}
-        vertexShader={`
-          varying vec3 vN;
-          void main() {
-            vN = normalize(normalMatrix * normal);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `}
-        fragmentShader={`
-          varying vec3 vN;
-          uniform vec3 color;
-          void main() {
-            float f = pow(0.72 - dot(vN, vec3(0.0, 0.0, 1.0)), 3.2);
-            gl_FragColor = vec4(color, f * 0.55);
-          }
-        `}
-      />
-    </mesh>
   );
 }
 
@@ -60,36 +31,22 @@ function Earth() {
 
   useFrame((_, dt) => {
     if (!ref.current) return;
-    ref.current.rotation.y += dt * (running ? 0.18 : 0.06);
+    ref.current.rotation.y += dt * (running ? 0.12 : 0.04);
   });
 
   return (
     <group ref={ref}>
       <mesh>
-        <sphereGeometry args={[1.58, 72, 72]} />
-        <meshStandardMaterial
-          color="#0b1c33"
-          metalness={0.18}
-          roughness={0.55}
-          emissive="#082033"
-          emissiveIntensity={0.4}
-        />
+        <sphereGeometry args={[1.58, 48, 48]} />
+        <meshBasicMaterial color="#ffffff" />
       </mesh>
       <mesh>
-        <sphereGeometry args={[1.582, 48, 48]} />
-        <meshBasicMaterial color="#3ee0c8" wireframe transparent opacity={0.12} />
+        <sphereGeometry args={[1.585, 32, 32]} />
+        <meshBasicMaterial color="#111111" wireframe transparent opacity={0.55} />
       </mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.72, 0.004, 8, 160]} />
-        <meshBasicMaterial color="#e8b86d" transparent opacity={0.55} />
-      </mesh>
-      <mesh rotation={[0.4, 0.2, 0.1]}>
-        <torusGeometry args={[1.86, 0.003, 8, 180]} />
-        <meshBasicMaterial color="#8b7cff" transparent opacity={0.4} />
-      </mesh>
-      <mesh>
-        <icosahedronGeometry args={[2.05, 1]} />
-        <meshBasicMaterial color="#7cf0df" wireframe transparent opacity={0.07} />
+        <torusGeometry args={[1.7, 0.003, 6, 120]} />
+        <meshBasicMaterial color="#111111" />
       </mesh>
       {points.length > 0 && (
         <points>
@@ -101,7 +58,7 @@ function Earth() {
               itemSize={3}
             />
           </bufferGeometry>
-          <pointsMaterial color="#3ee0c8" size={0.035} sizeAttenuation />
+          <pointsMaterial color="#111111" size={0.03} sizeAttenuation />
         </points>
       )}
     </group>
@@ -111,14 +68,10 @@ function Earth() {
 export default function Globe() {
   return (
     <div className="globe-layer">
-      <Canvas camera={{ position: [0, 0.4, 5.2], fov: 42 }}>
-        <color attach="background" args={["#05070d"]} />
-        <ambientLight intensity={0.45} />
-        <directionalLight position={[4, 2, 3]} intensity={1.4} color="#d9f6ff" />
-        <pointLight position={[-3, -1, -2]} intensity={1.2} color="#8b7cff" />
-        <Stars radius={80} depth={40} count={2500} factor={3} fade speed={0.6} />
+      <Canvas camera={{ position: [0, 0.3, 5.4], fov: 42 }}>
+        <color attach="background" args={["#ffffff"]} />
+        <ambientLight intensity={1} />
         <Earth />
-        <Atmosphere />
       </Canvas>
     </div>
   );
