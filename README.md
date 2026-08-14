@@ -17,6 +17,8 @@
 
 ## Запуск
 
+Локально:
+
 ```bat
 start.bat
 ```
@@ -31,3 +33,8 @@ npm run dev
 Откройте http://localhost:5173
 
 API: http://127.0.0.1:8787
+
+Прод: https://leadatlas-tan.vercel.app  
+Репозиторий: https://github.com/paligenix/leadatlas
+
+Каждый пуш в `main` автоматически уходит на Vercel.
